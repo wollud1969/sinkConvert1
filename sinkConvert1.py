@@ -14,7 +14,7 @@ def sinkSender(frame):
 
 
 # 16 octets
-deviceId = "sinkConvert1_01" 
+deviceId = os.environ['sinkDeviceId']
 
 # 32 octets
 sharedSecret = os.environ['sinkSharedSecret']
