@@ -59,37 +59,3 @@ def createSinkStruct(deviceId, sharedSecret, uptime, version, timestamp, frequen
 
 
 
-
-
-# 16 octets
-deviceId = "mainsCnt0X" 
-
-# 32 octets
-sharedSecret = "sharedSecret"
-
-# uptime, version, each 4 octets
-uptime = 100
-version = 0xcafebabe
-
-# timestamp in UNIX seconds, UTC, 8 octets
-timestamp = 1600000000
-
-freqs = [ 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000, 
-    50000, 50000, 50000, 50000, 50000
-]
-
-frame = createSinkStruct(deviceId, sharedSecret, uptime, version, timestamp, freqs)
-
-print(frame)
-print(len(frame))
