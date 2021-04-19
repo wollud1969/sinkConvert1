@@ -29,7 +29,7 @@ class ext_bytearray(bytearray):
         self.extend(('\0'*(length - len(v))).encode())
 
     
-def createSinkStruct(deviceId, sharedSecret, uptime, version, timestamp, frequencyArray):
+def createSinkStruct(deviceId, sharedSecret, version, timestamp, frequencyArray):
     if len(frequencyArray) != 60:
         raise ext_bytearray_exception()
 
@@ -38,7 +38,7 @@ def createSinkStruct(deviceId, sharedSecret, uptime, version, timestamp, frequen
     buffer.appendFixedLengthString(deviceId, 16)
     buffer.appendFixedLengthString(sharedSecret, 32)
 
-    buffer.appendInt32(uptime)
+    buffer.appendInt32(0)
     buffer.appendInt32(0)
     buffer.appendInt32(0)
     buffer.appendInt32(version)

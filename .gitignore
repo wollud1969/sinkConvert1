@@ -3,4 +3,5 @@ __pycache__
 .*.sw?
 .*~
 ENV
+sinkConvert1.cfg
 
