@@ -2,7 +2,7 @@ from sinkStruct import createSinkStruct
 from getData import getData
 import socket
 import os
-import time
+import datetime
 import configparser
 import logging as log
 import sys
@@ -30,10 +30,10 @@ def sanitizeFrequencyList(startTimestamp, freqList):
 
     for (timestamp, frequency) in freqList:
         while (finalTimestamp < timestamp):
-            finalTimestamp += 1
+            finalTimestamp += datetime.timedelta(seconds=1)
             result.append(INVALID_FREQUENCY)
         result.append(int(frequency * 1000))
-        finalTimestamp += 1
+        finalTimestamp += datetime.timedelta(seconds=1)
 
     while len(result) < 60:
         result.append(INVALID_FREQUENCY)
@@ -72,7 +72,7 @@ def init():
 init()
 
 
-startTime = int(time.time())
+startTime = datetime.datetime.utcnow().replace(microsecond=0)
 timestampFrequencyTuples = getData(config['SOURCE'], startTime)
 log.debug("Gathered data: {}".format(timestampFrequencyTuples))
 
@@ -83,5 +83,5 @@ frame = createSinkStruct(config['SINK']['DeviceId'], config['SINK']['SharedSecre
                          version, startTime, sanitizedFrequencyList)
 log.debug("Data for sink: {} {}".format(len(frame), (' '.join(format(x, '02x') for x in frame))))
 
-sinkSender(frame)
-log.info("Data sent to sink")
+# sinkSender(frame)
+# log.info("Data sent to sink")

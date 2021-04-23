@@ -1,4 +1,5 @@
 import logging as log
+import datetime
 
 def getData(config, startTimestamp):
     """
@@ -7,8 +8,8 @@ def getData(config, startTimestamp):
     It returns data with a timestamp greater or equal
     startTimestamp and less (without equal!) endTimestamp (computed below).
 
-    It returns this data as an array of arrays. The inner arrays are always 
-    two-tuples with the timestamp in UNIX seconds in UTC on position 0 and 
+    It returns this data as an list of lists. The inner lists are always 
+    two-tuples with the timestamp as datetime object in UTC on position 0 and 
     the frequency in Hz as float on position 1.
     The timestamps in the list have to be monotonic raising.
     There must be no more then one tuple per second.
@@ -23,15 +24,15 @@ def getData(config, startTimestamp):
     """
 
 
-    endTimestamp = startTimestamp + 60
+    endTimestamp = startTimestamp + datetime.timedelta(seconds=60)
 
     # dummy implementation
     result = []
     timestamp = startTimestamp
     frequency = 50.0
     while (timestamp < endTimestamp):
-        result.append([timestamp, frequency])
-        timestamp += 1
+        result.append((timestamp, frequency))
+        timestamp += datetime.timedelta(seconds=1)
     
     log.debug("Dummy data provided")
     return result
