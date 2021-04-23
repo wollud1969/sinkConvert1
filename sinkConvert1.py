@@ -83,5 +83,5 @@ frame = createSinkStruct(config['SINK']['DeviceId'], config['SINK']['SharedSecre
                          version, startTime, sanitizedFrequencyList)
 log.debug("Data for sink: {} {}".format(len(frame), (' '.join(format(x, '02x') for x in frame))))
 
-# sinkSender(frame)
-# log.info("Data sent to sink")
+sinkSender(frame)
+log.info("Data sent to sink")
