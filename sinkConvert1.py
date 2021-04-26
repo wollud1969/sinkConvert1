@@ -5,8 +5,9 @@ from loguru import logger
 import datetime
 import sys
 import argparse
-import threading
+from tick import Tick
 
+APP_NAME = "Wollud1969 DataSink:"
 
 version = 0x00000001
 SINK_SERVER = "sink.hottis.de"
@@ -18,6 +19,9 @@ SHARED_SECRET = os.environ["sharedsecret"]
 verbose = False
 oneShot = False
 dummyData = False
+
+
+
 
 def sinkSender(frame):
     sock = socket.socket(socket.AF_INET, # Internet
@@ -44,7 +48,15 @@ def sanitizeFrequencyList(startTimestamp, freqList):
 
 
 def init():
-    argParser = argparse.ArgumentParser(description="SinkConvert1")
+    argParser = argparse.ArgumentParser(
+        description="Wollud1969 DataSink: SinkConvert1",
+        epilog="""
+When not using dummy data, the MongoDB module requires the environment 
+variables 'serveruser', 'serverpassword' and 'server_url'.
+The sink sender in any case requires the env variables 'deviceid' and
+'sharedsecret'.        
+        """
+    )
     argParser.add_argument('--verbose', '-v',
                         help='verbose output',
                         required=False,
@@ -78,26 +90,37 @@ if dummyData:
 else:
     from getData import getData
 
+tick = None
+if not oneShot:
+    tick = Tick(60)
+    tick.start()
 
 while True:
-    startTime = datetime.datetime.utcnow().replace(microsecond=0) - datetime.timedelta(minutes=5)
-    timestampFrequencyTuples = getData(startTime)
-    logger.debug("Gathered data: {}".format(timestampFrequencyTuples))
+    started_at = datetime.datetime.now()
 
-    sanitizedFrequencyList = sanitizeFrequencyList(startTime, timestampFrequencyTuples)
-    logger.debug("Sanitized frequencies: {} {}".format(len(sanitizedFrequencyList), sanitizedFrequencyList))
+    try:
+        startTime = datetime.datetime.utcnow().replace(microsecond=0) - datetime.timedelta(minutes=5)
+        timestampFrequencyTuples = getData(startTime)
+        logger.debug("{} Gathered data: {}".format(APP_NAME, timestampFrequencyTuples))
 
-    frame = createSinkStruct(DEVICE_ID, SHARED_SECRET, 
-                             version, startTime, sanitizedFrequencyList)
-    logger.debug("Data for sink: {} {}".format(len(frame), (' '.join(format(x, '02x') for x in frame))))
+        sanitizedFrequencyList = sanitizeFrequencyList(startTime, timestampFrequencyTuples)
+        logger.debug("{} Sanitized frequencies: {} {}".format(APP_NAME, len(sanitizedFrequencyList), sanitizedFrequencyList))
 
-    sinkSender(frame)
-    logger.info("Data sent to sink")
+        frame = createSinkStruct(DEVICE_ID, SHARED_SECRET, 
+                                 version, startTime, sanitizedFrequencyList)
+        logger.debug("{} Data for sink: {} {}".format(APP_NAME, len(frame), (' '.join(format(x, '02x') for x in frame))))
+
+        sinkSender(frame)
+        logger.info("{} Data sent to sink".format(APP_NAME))
+    except Exception as e:
+        logger.error("{} Exception: {}, {}".format(APP_NAME, e.__class__.__name__, e))
+
+    ended_at = datetime.datetime.now()
+    duration_ms = (ended_at - started_at) / datetime.timedelta(milliseconds=1)
+    logger.info("{} Duration: {} ms".format(APP_NAME, duration_ms))
 
     if oneShot:
         break
-
-    with cond:
-        cond.wait()
-
+    else:
+        tick.waitForTick()
 
