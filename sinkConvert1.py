@@ -1,26 +1,28 @@
 from sinkStruct import createSinkStruct
-from getData import getData
 import socket
 import os
+from loguru import logger
 import datetime
-import configparser
-import logging as log
 import sys
 import argparse
+import threading
 
 
-config = None
 version = 0x00000001
+SINK_SERVER = "sink.hottis.de"
+SINK_PORT = 20169
 
+DEVICE_ID = os.environ["deviceid"]
+SHARED_SECRET = os.environ["sharedsecret"]
+
+verbose = False
+oneShot = False
+dummyData = False
 
 def sinkSender(frame):
-    global config
-    sinkServer = config['SINK']['Server']
-    sinkPort = int(config['SINK']['Port'])
-
     sock = socket.socket(socket.AF_INET, # Internet
                          socket.SOCK_DGRAM) # UDP
-    sock.sendto(frame, (sinkServer, sinkPort))
+    sock.sendto(frame, (SINK_SERVER, SINK_PORT))
     sock.close()
 
 def sanitizeFrequencyList(startTimestamp, freqList):
@@ -42,29 +44,28 @@ def sanitizeFrequencyList(startTimestamp, freqList):
 
 
 def init():
-    global config
-    argParser = argparse.ArgumentParser(description="SinConvert1")
+    argParser = argparse.ArgumentParser(description="SinkConvert1")
     argParser.add_argument('--verbose', '-v',
                         help='verbose output',
                         required=False,
                         action='store_true',
                         default=False)
-    argParser.add_argument('--configFile', '-c',
-                        help='configFile', required=False,
-                        default='./sinkConvert1.cfg')
+    argParser.add_argument('--oneShot', '-o',
+                        help='run once and terminate',
+                        required=False,
+                        action='store_true',
+                        default=False)
+    argParser.add_argument('--dummyData', '-d',
+                        help='use dummy data',
+                        required=False,
+                        action='store_true',
+                        default=False)
     args = argParser.parse_args()
 
-    config = configparser.ConfigParser()
-    config.read(args.configFile)
-    if args.verbose:
-        config['GLOBAL']['Verbose'] = 'true'
-
-    logHandlers = [ log.FileHandler(filename=config['GLOBAL']['Logfile']) ]
-    if config['GLOBAL']['Verbose'].upper() in ['TRUE', 'YES']:
-        logHandlers.append(log.StreamHandler(sys.stdout))
-    log.basicConfig(level=log.DEBUG, handlers=logHandlers,
-                    format='%(asctime)s %(levelname)s : %(message)s')
-
+    global verbose, oneShot, dummyData
+    verbose = args.verbose
+    oneShot = args.oneShot
+    dummyData = args.dummyData
 
 
 # ---- MAIN ---------------------------------------------------------
@@ -72,16 +73,31 @@ def init():
 init()
 
 
-startTime = datetime.datetime.utcnow().replace(microsecond=0)
-timestampFrequencyTuples = getData(config['SOURCE'], startTime)
-log.debug("Gathered data: {}".format(timestampFrequencyTuples))
+if dummyData:
+    from getDummyData import getData
+else:
+    from getData import getData
 
-sanitizedFrequencyList = sanitizeFrequencyList(startTime, timestampFrequencyTuples)
-log.debug("Sanitized frequencies: {} {}".format(len(sanitizedFrequencyList), sanitizedFrequencyList))
 
-frame = createSinkStruct(config['SINK']['DeviceId'], config['SINK']['SharedSecret'], 
-                         version, startTime, sanitizedFrequencyList)
-log.debug("Data for sink: {} {}".format(len(frame), (' '.join(format(x, '02x') for x in frame))))
+while True:
+    startTime = datetime.datetime.utcnow().replace(microsecond=0) - datetime.timedelta(minutes=5)
+    timestampFrequencyTuples = getData(startTime)
+    logger.debug("Gathered data: {}".format(timestampFrequencyTuples))
 
-sinkSender(frame)
-log.info("Data sent to sink")
+    sanitizedFrequencyList = sanitizeFrequencyList(startTime, timestampFrequencyTuples)
+    logger.debug("Sanitized frequencies: {} {}".format(len(sanitizedFrequencyList), sanitizedFrequencyList))
+
+    frame = createSinkStruct(DEVICE_ID, SHARED_SECRET, 
+                             version, startTime, sanitizedFrequencyList)
+    logger.debug("Data for sink: {} {}".format(len(frame), (' '.join(format(x, '02x') for x in frame))))
+
+    sinkSender(frame)
+    logger.info("Data sent to sink")
+
+    if oneShot:
+        break
+
+    with cond:
+        cond.wait()
+
+
