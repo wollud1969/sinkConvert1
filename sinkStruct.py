@@ -1,5 +1,5 @@
 from hashlib import sha256
-
+import datetime
 
 class ext_bytearray_exception(Exception): pass
 
@@ -43,7 +43,7 @@ def createSinkStruct(deviceId, sharedSecret, version, timestamp, frequencyArray)
     buffer.appendInt32(0)
     buffer.appendInt32(version)
 
-    buffer.appendInt64(int(timestamp.timestamp()))
+    buffer.appendInt64(int(timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()))
 
     for f in frequencyArray:
         buffer.appendInt32(f)

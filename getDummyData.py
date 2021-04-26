@@ -1,5 +1,6 @@
 from loguru import logger
 import datetime
+import random
 
 def getData(startTimestamp):
     # raise ValueError("Test Dummy Error")
@@ -9,8 +10,8 @@ def getData(startTimestamp):
     # dummy implementation
     result = []
     timestamp = startTimestamp
-    frequency = 50.0
     while (timestamp < endTimestamp):
+        frequency = 50.0 + random.randrange(-99,99)/1000
         result.append((timestamp, frequency))
         timestamp += datetime.timedelta(seconds=1)
     
