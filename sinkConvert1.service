@@ -5,7 +5,12 @@ After=network-online.target
 
 [Service]
 User=nobody
-Environment="serveruser=..." "server_url=..." "deviceid=..."
+
+# fill this variables with meanful values
+Environment="serveruser=..."
+Environment="server_url=..."
+Environment="deviceid=..."
+Environment="sharedsecret=..."
 
 Type=simple
 GuessMainPID=yes
