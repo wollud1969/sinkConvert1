@@ -9,8 +9,9 @@ from tick import Tick
 
 APP_NAME = "Wollud1969 DataSink:"
 
-version = 0x00000001
-SINK_SERVER = "sink.hottis.de"
+VERSION = 0x00000001
+REGULAR_SINK_SERVER = "sink.hottis.de"
+SINK_SERVER = REGULAR_SINK_SERVER
 SINK_PORT = 20169
 
 DEVICE_ID = os.environ["deviceid"]
@@ -82,12 +83,17 @@ The sink sender in any case requires the env variables 'deviceid' and
                         help='select dummy data source, current 1, 2 or 3',
                         required=False,
                         default=None)
+    argParser.add_argument('--overrideSinkServer',
+                        help='set an alternative sink server, only for testing',
+                        required=False,
+                        default=REGULAR_SINK_SERVER)
     args = argParser.parse_args()
 
-    global verbose, oneShot, dummyDataSource
+    global verbose, oneShot, dummyDataSource, SINK_SERVER
     verbose = args.verbose
     oneShot = args.oneShot
     dummyDataSource = args.dummyDataSource
+    SINK_SERVER = args.overrideSinkServer
 
 
 # ---- MAIN ---------------------------------------------------------
@@ -121,7 +127,7 @@ while True:
         logger.debug("{} Sanitized frequencies: {} {}".format(APP_NAME, len(sanitizedFrequencyList), sanitizedFrequencyList))
 
         frame = createSinkStruct(DEVICE_ID, SHARED_SECRET, 
-                                 version, startTime, sanitizedFrequencyList)
+                                 VERSION, startTime, sanitizedFrequencyList)
         logger.debug("{} Data for sink: {} {}".format(APP_NAME, len(frame), (' '.join(format(x, '02x') for x in frame))))
 
         sinkSender(frame)
