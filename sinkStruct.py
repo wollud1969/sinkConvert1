@@ -31,7 +31,7 @@ class ext_bytearray(bytearray):
     
 def createSinkStruct(deviceId, sharedSecret, version, timestamp, frequencyArray):
     if len(frequencyArray) != 60:
-        raise ext_bytearray_exception()
+        raise ext_bytearray_exception("length shall be exactly 60")
 
     buffer = ext_bytearray()
 

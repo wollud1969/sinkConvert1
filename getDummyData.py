@@ -15,5 +15,5 @@ def getData(startTimestamp):
         result.append((timestamp, frequency))
         timestamp += datetime.timedelta(seconds=1)
     
-    logger.debug("Wollud1969 DataSink: Dummy data provided")
+    logger.debug("Wollud1969 DataSink: Dummy data Set 1 provided")
     return result

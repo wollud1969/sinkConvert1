@@ -18,7 +18,7 @@ SHARED_SECRET = os.environ["sharedsecret"]
 
 verbose = False
 oneShot = False
-dummyData = False
+dummyDataSource = None
 
 
 
@@ -30,12 +30,23 @@ def sinkSender(frame):
     sock.close()
 
 def sanitizeFrequencyList(startTimestamp, freqList):
+    # only consider timestamp down to seconds, wipe microseconds
+    freqList = [ (t.replace(microsecond=0), f) for (t, f) in freqList ]
+
+    lenFreqList = len(freqList)
+    if lenFreqList > 60:
+        raise ValueError("length of freqList > 60, it is {}".format(lenFreqList))
+    timespan = (freqList[-1][0].replace(microsecond=0) - freqList[0][0].replace(microsecond=0)).total_seconds()
+    if timespan >= 60:
+        raise ValueError("timespan of freqList >= 60, it is {}".format(timespan))
+
     INVALID_FREQUENCY = 0
     finalTimestamp = startTimestamp
     result = []
 
     for (timestamp, frequency) in freqList:
         while (finalTimestamp < timestamp):
+            logger.warning("{} Missing value, fill with invalid value".format(APP_NAME))
             finalTimestamp += datetime.timedelta(seconds=1)
             result.append(INVALID_FREQUENCY)
         result.append(int(frequency * 1000))
@@ -67,17 +78,16 @@ The sink sender in any case requires the env variables 'deviceid' and
                         required=False,
                         action='store_true',
                         default=False)
-    argParser.add_argument('--dummyData', '-d',
-                        help='use dummy data',
+    argParser.add_argument('--dummyDataSource', '-d',
+                        help='select dummy data source, current 1, 2 or 3',
                         required=False,
-                        action='store_true',
-                        default=False)
+                        default=None)
     args = argParser.parse_args()
 
-    global verbose, oneShot, dummyData
+    global verbose, oneShot, dummyDataSource
     verbose = args.verbose
     oneShot = args.oneShot
-    dummyData = args.dummyData
+    dummyDataSource = args.dummyDataSource
 
 
 # ---- MAIN ---------------------------------------------------------
@@ -85,8 +95,12 @@ The sink sender in any case requires the env variables 'deviceid' and
 init()
 
 
-if dummyData:
+if dummyDataSource == "1":
     from getDummyData import getData
+elif dummyDataSource == "2":
+    from getDummyData2 import getData
+elif dummyDataSource == "3":
+    from getDummyData3 import getData
 else:
     from getData import getData
 
@@ -101,7 +115,7 @@ while True:
     try:
         startTime = datetime.datetime.utcnow().replace(microsecond=0) - datetime.timedelta(minutes=5)
         timestampFrequencyTuples = getData(startTime)
-        logger.debug("{} Gathered data: {}".format(APP_NAME, timestampFrequencyTuples))
+        logger.debug("{} Gathered data: {} {}".format(APP_NAME, len(timestampFrequencyTuples), timestampFrequencyTuples))
 
         sanitizedFrequencyList = sanitizeFrequencyList(startTime, timestampFrequencyTuples)
         logger.debug("{} Sanitized frequencies: {} {}".format(APP_NAME, len(sanitizedFrequencyList), sanitizedFrequencyList))
